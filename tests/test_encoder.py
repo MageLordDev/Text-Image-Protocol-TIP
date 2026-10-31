@@ -1,41 +1,66 @@
+import pytest
 
 from PIL import Image
+
 from tip import encode_image
 
 
+def create_test_image(path, size=(10, 10), color=(255, 0, 0)):
+    image = Image.new("RGB", size, color)
+    image.save(path)
+
+
 def test_png_encoding(tmp_path):
-    image_path = tmp_path / "test.png"
+    input_path = tmp_path / "test.png"
     output_path = tmp_path / "test.tip"
 
-    Image.new("RGB", (100, 100), (255, 0, 0)).save(image_path)
+    create_test_image(input_path)
 
-    result = encode_image(str(image_path), str(output_path))
+    result = encode_image(
+        input_path,
+        output_path,
+        size=(64, 64)
+    )
 
     assert result.startswith("TIP/0.1")
-    assert "SIZE:64x64" in result
     assert output_path.exists()
 
 
 def test_pixel_count(tmp_path):
-    image_path = tmp_path / "test.png"
-    Image.new("RGB", (100, 100), (255, 0, 0)).save(image_path)
+    input_path = tmp_path / "test.png"
 
-    result = encode_image(str(image_path))
+    create_test_image(input_path)
 
-    data = result.split("DATA:\n", 1)[1]
-    rows = data.splitlines()
+    result = encode_image(
+        input_path,
+        size=(8, 8),
+        resize_mode="stretch"
+    )
 
-    assert len(rows) == 64
+    lines = result.splitlines()
 
-    for row in rows:
-        assert len(row.split(",")) == 64
+    assert lines[1] == "SIZE 8x8"
+
+    pixel_lines = lines[5:]
+
+    assert len(pixel_lines) == 8
+
+    for line in pixel_lines:
+        assert len(line.split()) == 8
 
 
 def test_invalid_image():
-    try:
+    with pytest.raises(FileNotFoundError):
         encode_image("this_file_does_not_exist.png")
-    except FileNotFoundError:
-        pass
-    else:
-        raise AssertionError("FileNotFoundError bekleniyordu")
-      
+
+
+def test_invalid_resize_mode(tmp_path):
+    input_path = tmp_path / "test.png"
+
+    create_test_image(input_path)
+
+    with pytest.raises(ValueError):
+        encode_image(
+            input_path,
+            resize_mode="invalid"
+        )
