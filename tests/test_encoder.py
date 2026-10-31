@@ -64,3 +64,34 @@ def test_invalid_resize_mode(tmp_path):
             input_path,
             resize_mode="invalid"
         )
+
+
+def test_txt_output(tmp_path):
+    input_path = tmp_path / "test.png"
+    output_path = tmp_path / "test.txt"
+
+    image = Image.new("RGB", (2, 2))
+    image.putdata([
+        (255, 0, 0),
+        (0, 255, 0),
+        (0, 0, 255),
+        (255, 255, 255)
+    ])
+    image.save(input_path)
+
+    encode_image(
+        input_path,
+        output_path,
+        size=(2, 2),
+        resize_mode="stretch"
+    )
+
+    assert output_path.exists()
+
+    content = output_path.read_text(encoding="utf-8")
+    lines = content.splitlines()
+
+    assert lines[0] == "TIP/0.1"
+    assert lines[1] == "SIZE 2x2"
+    assert lines[5] == "FF0000 00FF00"
+    assert lines[6] == "0000FF FFFFFF"
