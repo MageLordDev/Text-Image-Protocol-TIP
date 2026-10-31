@@ -1,16 +1,15 @@
-
 name: TIP Tests
 
 on:
   push:
-    branches: ["main", "master"]
+    branches:
+      - main
   pull_request:
-    branches: ["main", "master"]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
   test:
-    name: Run Encoder Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -30,4 +29,3 @@ jobs:
 
       - name: Run tests
         run: pytest -v
-        
