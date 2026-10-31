@@ -8,34 +8,34 @@ def encode_image(
     size=(64, 64),
     resize_mode="contain"
 ):
-    """
-    Encode an image into the TIP text-based format.
-
-    Args:
-        input_path: Source image path.
-        output_path: Optional output .tip file path.
-        size: Target image dimensions (width, height).
-        resize_mode: 'contain' or 'stretch'.
-
-    Returns:
-        str: Encoded TIP text.
-    """
-
     if resize_mode not in ("contain", "stretch"):
-        raise ValueError(
-            "resize_mode must be 'contain' or 'stretch'"
-        )
+        raise ValueError("Invalid resize mode")
 
-    with Image.open(input_path) as image:
-        image = image.convert("RGB")
+    if (
+        not isinstance(size, (tuple, list))
+        or len(size) != 2
+        or any(
+            not isinstance(v, int) or isinstance(v, bool) or v <= 0
+            for v in size
+        )
+    ):
+        raise ValueError("Size must contain two positive integers")
+
+    with Image.open(input_path) as source:
+        image = source.convert("RGB")
 
         if resize_mode == "stretch":
-            image = image.resize(size, Image.Resampling.LANCZOS)
-
+            image = image.resize(
+                tuple(size),
+                Image.Resampling.LANCZOS
+            )
         else:
-            image.thumbnail(size, Image.Resampling.LANCZOS)
+            image.thumbnail(
+                tuple(size),
+                Image.Resampling.LANCZOS
+            )
 
-            canvas = Image.new("RGB", size, (0, 0, 0))
+            canvas = Image.new("RGB", tuple(size), (0, 0, 0))
 
             x = (size[0] - image.width) // 2
             y = (size[1] - image.height) // 2
@@ -63,7 +63,7 @@ def encode_image(
             )
         )
 
-    encoded = "\n".join(lines)
+    encoded = "\n".join(lines) + "\n"
 
     if output_path:
         with open(output_path, "w", encoding="utf-8") as file:
